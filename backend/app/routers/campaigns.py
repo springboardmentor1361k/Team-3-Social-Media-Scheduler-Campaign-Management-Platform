@@ -1,3 +1,4 @@
+from app.services.analytics_service import aggregate_campaign_metrics
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
@@ -68,3 +69,25 @@ def delete_campaign(
     db.delete(campaign)
     db.commit()
     return None
+
+@router.get("/{campaign_id}/metrics", tags=["Analytics"])
+def get_campaign_metrics(
+    campaign_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Fetches aggregated performance metrics for a specific campaign.
+    """
+    # Verify the campaign belongs to the user first
+    campaign = db.query(Campaign).filter(Campaign.id == campaign_id, Campaign.user_id == current_user.id).first()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+
+    # Fetch the metrics using the service layer
+    metrics_data = aggregate_campaign_metrics(db, campaign_id)
+    
+    if not metrics_data:
+        return {"data": {}}
+        
+    return {"data": dict(metrics_data._mapping)}

@@ -1,3 +1,6 @@
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.services.analytics_service import get_audience_growth
 from fastapi import APIRouter, Depends
 from typing import Dict, Any
 
@@ -28,3 +31,19 @@ async def get_dashboard_analytics(current_user: User = Depends(get_current_user)
         "recentActivity": activity,
         "topPosts": top
     }
+
+@router.get("/audience-growth/{account_id}")
+def get_growth_metrics(
+    account_id: int, 
+    start_date: str, 
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Fetches daily follower growth for a specific social account from PostgreSQL.
+    """
+    # Fetch data using the service function
+    data = get_audience_growth(db, account_id, start_date)
+    
+    # Convert SQLAlchemy Row objects to dictionaries for the JSON response
+    return {"data": [dict(row._mapping) for row in data]}
