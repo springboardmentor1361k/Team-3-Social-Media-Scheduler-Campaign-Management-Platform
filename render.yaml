@@ -1,0 +1,151 @@
+﻿# render.yaml — SocialPilot Infrastructure as Code for Render.com
+# Defines 3 services built from the same Dockerfile:
+#   1. socialpilot-api    — FastAPI web server
+#   2. socialpilot-worker — Celery background worker
+#   3. socialpilot-beat   — Celery beat scheduler
+#
+# Deploy: connect your GitHub repo to Render and it will detect this file.
+
+services:
+
+  # ── 1. FastAPI Web Service ─────────────────────────────────────────────────
+  - type: web
+    name: socialpilot-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: singapore            # or oregon / frankfurt — pick closest to users
+    healthCheckPath: /
+    envVars:
+      # ── Core ──────────────────────────────────────────────────────────────
+      - key: SECRET_KEY
+        generateValue: true      # Render auto-generates a secure random value
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
+      - key: ALLOWED_ORIGINS
+        value: https://your-app.vercel.app  # ← replace with your Vercel URL
+
+      # ── PostgreSQL (Neon) ────────────────────────────────────────────────
+      - key: DATABASE_URL
+        sync: false              # Set manually in Render dashboard → Environment
+
+      # ── MongoDB Atlas ────────────────────────────────────────────────────
+      - key: MONGODB_URL
+        sync: false
+      - key: MONGODB_DB
+        value: socialpilot
+
+      # ── Redis (Upstash) — rediss:// URL ─────────────────────────────────
+      - key: REDIS_URL
+        sync: false
+
+      # ── Token encryption ────────────────────────────────────────────────
+      - key: TOKEN_ENCRYPTION_KEY
+        sync: false              # Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
+      # ── AWS S3 ──────────────────────────────────────────────────────────
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: S3_BUCKET_NAME
+        sync: false
+      - key: S3_PUBLIC_URL
+        sync: false
+
+      # ── Social Platform OAuth (set individually in dashboard) ────────────
+      - key: FACEBOOK_APP_ID
+        sync: false
+      - key: FACEBOOK_APP_SECRET
+        sync: false
+      - key: FACEBOOK_REDIRECT_URI
+        sync: false
+      - key: INSTAGRAM_REDIRECT_URI
+        sync: false
+      - key: LINKEDIN_CLIENT_ID
+        sync: false
+      - key: LINKEDIN_CLIENT_SECRET
+        sync: false
+      - key: LINKEDIN_REDIRECT_URI
+        sync: false
+      - key: TWITTER_API_KEY
+        sync: false
+      - key: TWITTER_API_SECRET
+        sync: false
+      - key: TWITTER_BEARER_TOKEN
+        sync: false
+      - key: TWITTER_REDIRECT_URI
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+
+  # ── 2. Celery Worker (Background Task Processor) ───────────────────────────
+  - type: worker
+    name: socialpilot-celery-worker
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: celery -A celery_worker worker --loglevel=info --concurrency=1
+    plan: free
+    region: singapore
+    envVars:
+      - key: SECRET_KEY
+        fromService:
+          name: socialpilot-api
+          type: web
+          envVarKey: SECRET_KEY
+      - key: DATABASE_URL
+        sync: false
+      - key: MONGODB_URL
+        sync: false
+      - key: MONGODB_DB
+        value: socialpilot
+      - key: REDIS_URL
+        sync: false
+      - key: TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: S3_BUCKET_NAME
+        sync: false
+      - key: S3_PUBLIC_URL
+        sync: false
+
+  # ── 3. Celery Beat Scheduler ──────────────────────────────────────────────
+  - type: worker
+    name: socialpilot-celery-beat
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: celery -A celery_worker beat --loglevel=info
+    plan: free
+    region: singapore
+    envVars:
+      - key: SECRET_KEY
+        fromService:
+          name: socialpilot-api
+          type: web
+          envVarKey: SECRET_KEY
+      - key: DATABASE_URL
+        sync: false
+      - key: MONGODB_URL
+        sync: false
+      - key: MONGODB_DB
+        value: socialpilot
+      - key: REDIS_URL
+        sync: false
+      - key: TOKEN_ENCRYPTION_KEY
+        sync: false

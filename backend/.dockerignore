@@ -1,0 +1,43 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Local environment files — NEVER bake secrets into image
+.env
+*.env
+
+# Celery beat schedule state files
+celerybeat-schedule.*
+*.bak
+*.dat
+*.dir
+
+# Test artifacts
+.pytest_cache/
+tests/__pycache__/
+htmlcov/
+.coverage
+*.xml
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Alembic compiled cache
+alembic/versions/__pycache__/
+
+# Node (shouldn't be here but just in case)
+node_modules/
+package-lock.json

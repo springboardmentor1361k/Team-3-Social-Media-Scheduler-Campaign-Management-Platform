@@ -1,0 +1,87 @@
+﻿# ─────────────────────────────────────────────────────────────────────────────
+# SocialPilot — docker-compose for local development
+#
+# Services:
+#   api       — FastAPI backend (uvicorn)
+#   worker    — Celery worker (background task processing)
+#   beat      — Celery beat (periodic scheduler)
+#   redis     — Redis broker / result backend
+#
+# External services (not in compose — use cloud free tiers):
+#   PostgreSQL — Neon free tier  (set DATABASE_URL in .env)
+#   MongoDB    — Atlas M0 free   (set MONGODB_URL in .env)
+#   AWS S3     — Free tier       (set AWS_* vars in .env)
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: socialpilot-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI Backend ────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: final
+    container_name: socialpilot-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ── Celery Worker ──────────────────────────────────────────────────────────
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: final
+    container_name: socialpilot-worker
+    restart: unless-stopped
+    command: celery -A celery_worker worker --loglevel=info --concurrency=2
+    env_file:
+      - ./backend/.env
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ── Celery Beat Scheduler ─────────────────────────────────────────────────
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: final
+    container_name: socialpilot-beat
+    restart: unless-stopped
+    command: celery -A celery_worker beat --loglevel=info
+    env_file:
+      - ./backend/.env
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
