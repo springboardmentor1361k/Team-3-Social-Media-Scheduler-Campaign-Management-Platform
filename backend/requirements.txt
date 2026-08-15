@@ -23,3 +23,5 @@ google-auth-oauthlib>=1.2.0
 cryptography>=42.0.0                # Fernet symmetric encryption for tokens
 # ── File / form uploads ───────────────────────────────────────────────────────
 python-multipart>=0.0.9
+# ── AWS S3 (media upload / delete) ───────────────────────────────────────────
+boto3>=1.34.0                      # AWS SDK — includes botocore
