@@ -67,5 +67,9 @@ Thumbs.db
 *.xlsx
 *.xls
 
+# Project docs not included in branch
+*.mwb
+*.pdf
+
 # Redis dump
 dump.rdb

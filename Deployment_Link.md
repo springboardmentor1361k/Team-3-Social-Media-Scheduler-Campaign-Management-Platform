@@ -1,1 +1,0 @@
-﻿Deployed Project Link - https://social-pilot-nine.vercel.app/home
