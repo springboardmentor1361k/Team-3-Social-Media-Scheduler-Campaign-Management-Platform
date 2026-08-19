@@ -1,5 +1,7 @@
 # SocialPilot
 
+🚀 **Live Demo:** [https://social-pilot-nine.vercel.app/home](https://social-pilot-nine.vercel.app/home)
+
 A centralized social media scheduler and campaign management platform for content creators, marketing teams, and businesses.
 
 ---
