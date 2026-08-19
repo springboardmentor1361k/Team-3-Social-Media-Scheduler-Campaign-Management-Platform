@@ -455,7 +455,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=60
 
 DATABASE_URL=postgresql://socialpilot_user:your_password@localhost:5432/socialpilot
 
-MONGODB_URL=mongodb+srv://your_user:your_password@your_cluster.mongodb.net/?retryWrites=true&w=majority&appName=socialpilot
+MONGODB_URL=mongodb+srv://your username: your password@your database/?retryWrites=true&w=majority&appName=socialpilot
 MONGODB_DB=socialpilot
 
 REDIS_URL=redis://localhost:6379
